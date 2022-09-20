@@ -17,6 +17,11 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('peer-msg', data)
   })
 
+  socket.on('peer_ready', function (data) {
+    console.log('Peer Ready:', data)
+    socket.broadcast.emit('peer_ready', data)
+  })
+
   socket.on('peer-file', function (data) {
     console.log('File from peer: %s', data)
     socket.broadcast.emit('peer-file', data)

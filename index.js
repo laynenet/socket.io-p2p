@@ -32,16 +32,19 @@ function Socketiop2p (socket, opts, cb) {
   }
   var defaultOpts = {
     autoUpgrade: true,
-    numClients: 5
+    numClients: 1 //5
   }
   self.opts = extend(defaultOpts, (opts || {}))
   self.peerOpts = self.opts.peerOpts || {}
   self.numConnectedClients
 
   socket.on('numClients', function (numClients) {
+	console.log('numClients: ', numClients);
+	
     self.peerId = socket.io.engine.id
     self.numConnectedClients = numClients
     if (rtcSupport.supportDataChannel) {
+		console.log('rtcSupport.supportDataChannel = true')
       generateOffers(function (offers) {
         var offerObj = {
           offers: offers,
@@ -53,10 +56,14 @@ function Socketiop2p (socket, opts, cb) {
 
     function generateOffers (cb) {
       var offers = []
+	  console.log('generateOffers: ');
+	  console.log('self.opts.numClients: ', self.opts.numClients);
+	  
       for (var i = 0; i < self.opts.numClients; ++i) {
         generateOffer()
       }
       function generateOffer () {
+		console.log('generateOffer')
         var offerId = hat(160)
         var peerOpts = extend(self.peerOpts, {initiator: true})
         var peer = self._peers[offerId] = new Peer(peerOpts)
@@ -86,19 +93,22 @@ function Socketiop2p (socket, opts, cb) {
   })
 
   socket.on('offer', function (data) {
+	console.log('offer: ', data);
     var peerOpts = extend(self.peerOpts, {initiator: false})
     var peer = self._peers[data.fromPeerId] = new Peer(peerOpts)
     self.numConnectedClients++
     peer.setMaxListeners(50)
     self.setupPeerEvents(peer)
     peer.on('signal', function (signalData) {
+		console.log('signalData: ', signalData);
+		
       var signalObj = {
         signal: signalData,
         offerId: data.offerId,
         fromPeerId: self.peerId,
         toPeerId: data.fromPeerId
       }
-      socket.emit('peer-signal', signalObj)
+      socket.emit('peer_signal', signalObj)
     })
 
     peer.on('error', function (err) {
@@ -108,7 +118,8 @@ function Socketiop2p (socket, opts, cb) {
     peer.signal(data.offer)
   })
 
-  socket.on('peer-signal', function (data) {
+  socket.on('peer_signal', function (data) {
+	console.log('ON peer_signal')
     // Select peer from offerId if exists
     var peer = self._peers[data.offerId] || self._peers[data.fromPeerId]
     if (peer !== undefined) {
@@ -119,7 +130,7 @@ function Socketiop2p (socket, opts, cb) {
           fromPeerId: self.peerId,
           toPeerId: data.fromPeerId
         }
-        socket.emit('peer-signal', signalObj)
+        socket.emit('peer_signal', signalObj)
       })
 
       peer.signal(data.signal)
@@ -128,6 +139,11 @@ function Socketiop2p (socket, opts, cb) {
 
   self.on('peer_ready', function (peer) {
     self.readyPeers++
+	console.log('ON peer_ready')
+	console.log('self.readyPeers: ', self.readyPeers);
+	console.log('self.numConnectedClients: ', self.numConnectedClients);
+	console.log('self.ready: ', self.ready);
+	
     if (self.readyPeers >= self.numConnectedClients && !self.ready) {
       self.ready = true
       self.emit('upgrade')
@@ -135,6 +151,7 @@ function Socketiop2p (socket, opts, cb) {
   })
 
   self.on('upgrade', function () {
+	console.log('upgrade2')
     if (self.opts.autoUpgrade) self.usePeerConnection = true
     if (typeof self.cb === 'function') self.cb()
   })
@@ -251,7 +268,8 @@ Socketiop2p.prototype.disconnect = function () {
  * Use peerConnection instead of socket.io one.
 **/
 Socketiop2p.prototype.upgrade = function () {
-  this.usePeerConnection = true
+	console.log('upgrade')
+	this.usePeerConnection = true
 }
 
 module.exports = Socketiop2p

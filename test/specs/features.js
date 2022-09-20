@@ -111,8 +111,8 @@ function createPeers (cb) {
   p2p1.on('offers', function (data) {
     for (var i = 1; i < 3; i++) {
       var socket = sockets['sio' + i]
-      socket.on('peer-signal', function (data) {
-        p2p1.socket.emit('peer-signal', data)
+      socket.on('peer_signal', function (data) {
+        p2p1.socket.emit('peer_signal', data)
       })
       var offerObj = data.offers[i - 1]
       var emittedOffer = {fromPeerId: 0, offerId: offerObj.offerId, offer: offerObj.offer}
